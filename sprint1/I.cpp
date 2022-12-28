@@ -3,8 +3,15 @@
 using namespace std;
 
 bool IsPowerOfFour(int number) {
-	// Здесь реализация вашего решения
+	while (number != 1) {
+		if ((number%4) != 0) {
+			return false;
+		} else {
+			number = number/4;
+		}
+	}
 
+	return true;
 }
 
 void print(bool result) {

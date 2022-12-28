@@ -1,11 +1,31 @@
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
-string GetLongestWord(const string &line) {
-	// Здесь реализация вашего решения
 
+string GetLongestWord(const string &line) {
+	stringstream ss(line);
+	string word;
+	vector<string> words;
+
+	while (getline(ss, word, ' ')) {
+		words.push_back(word);
+	}
+
+
+	string longest_word;
+	int greatest_size = 0;
+
+	for (string word : words) {
+		if (word.size() > greatest_size) {
+			longest_word = word;
+			greatest_size = word.size();
+		}
+	}
+	return longest_word;
 }
 
 void print(const string &result) {
