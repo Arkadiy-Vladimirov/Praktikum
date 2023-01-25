@@ -30,6 +30,27 @@ public:
             return *max_ptr;
         }  
     }
+
+    void read_command() {
+        std::string command_name;
+        std::cin >> command_name;
+        if (command_name == "push") {
+            int x;
+            std::cin >> x;
+            push(x);
+        } else {
+            try {
+                if (command_name == "pop") {
+                    pop();
+                }
+                if (command_name == "get_max") {
+                    std::cout << get_max() << std::endl;
+                }
+            } catch (std::string &error_name) { std::cout << error_name << std::endl;}
+        }
+
+        return;
+    }
 };
 
 int main() {
@@ -38,23 +59,8 @@ int main() {
     int n;
     std::cin >> n;
 
-    std::string command_name;
     for (int i = 0; i < n; ++i) {
-        std::cin >> command_name;
-        if (command_name == "push") {
-            int x;
-            std::cin >> x;
-            stack.push(x);
-        } else {
-            try {
-                if (command_name == "pop") {
-                    stack.pop();
-                }
-                if (command_name == "get_max") {
-                    std::cout << stack.get_max() << std::endl;
-                }
-            } catch (std::string &error_name) { std::cout << error_name << std::endl;}
-        }
+        stack.read_command();
     }
 
     return 0;
