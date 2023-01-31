@@ -1,4 +1,4 @@
-// accepted parcel ID: 81521725
+// accepted parcel ID: 81606610
 //
 // Standard realisation of dequeue based on a circular buffer.
 //
@@ -10,6 +10,8 @@
 // case and is handled separately)
 // As the adresses of the first and the last elements are always at disposal, 
 // all standard dequeue operations are of O(1) complexity.
+// Under the assumption of correct operation with deque of size n, buffer 
+// capacity has to be not less than n. Hence, the space complexity is O(n).
 //
 //  buffer addressing mode outline:
 //
