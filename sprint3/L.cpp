@@ -1,4 +1,4 @@
-// find the position of the first element in array greater or equal than x
+// find the position of the first element in array greater or equal than x (nlogn)
 
 #include <iostream>
 
