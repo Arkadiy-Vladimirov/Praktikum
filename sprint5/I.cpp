@@ -11,7 +11,7 @@
 // classes (as follows from the definition of bin search tree) that must form 
 // two independent trees and be connected with the root with one edge each.
 // Thus it is left to costruct two arbitrary edges one to the left, one to 
-// the right, which is equal of chossing another pair of roots for trees of 
+// the right, which is equal of choosing another pair of roots for trees of 
 // corresponding sizes.
 //
 //                  |<-..   ..<-|->..   ..->|
