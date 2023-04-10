@@ -7,9 +7,9 @@
 //  - if not found do nothing, otherwise replace found node with the rigthest 
 //    node in the left subtree (new_root() function O(h))
 //
-// The algorithm uses O(1) of additional memory space and is of O(h) time 
-// complexity: O(h) for deleted node search and O(h) for traversing to the 
-// rightest node in the left subtree.
+// The algorithm uses O(h) of additional memory space (for bin search call 
+// stack) and is of O(h) time complexity: O(h) for deleted node search and O(h) 
+// for traversing to the rightest node in the left subtree.
 //
 
 #ifndef REMOTE_JUDGE
