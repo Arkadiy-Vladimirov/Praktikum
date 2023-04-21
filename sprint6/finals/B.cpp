@@ -37,10 +37,12 @@
 #include <unordered_map>
 #include <list>
 #include <map>
+#include <stack>
 
 template <class V>
 class Vertex;
 
+//__________________________Graph_class_________________________________________
 template <class V>
 class Graph { 
     // Directed Graph class implemented on adjacency list
@@ -51,7 +53,7 @@ class Graph {
     std::unordered_map<V, std::list<Vert>> reachibility_list;
 
 public:
-    Graph(size_t n) { 
+    Graph(size_t n = 0) { 
         for (size_t i = 0; i < n; ++i) {
             vertices.push_back(Vert(V(i), *this));
         }
@@ -77,14 +79,26 @@ public:
         return reachibility_list[from];
     }
 };
+//______________________________________________________________________________
 
 
+//_______________________Vertex_class___________________________________________
 template <class V>
 class Vertex {
         V name;
         Graph<V> &G;
     public: 
         Vertex(V v, Graph<V> &G) : name(v), G(G) {};
+
+        operator V() const {return name;};
+
+        const Vertex<V>& operator= (const Vertex<V> &other) {
+            name = other.name; G = other.G; return *this;
+        }
+
+        V get_name() const {
+            return name;
+        }
         
         friend std::ostream& operator << (std::ostream &out, const Vertex &v) {
             return out << v.name;
@@ -93,9 +107,32 @@ class Vertex {
         friend std::list<Vertex>& adj(Vertex &v) {
             return v.G.get_adjacent(v.name);
         }
+
+        friend std::list<Vertex>& reach(Vertex &v) {
+            return v.G.get_reachable(v.name);
+        }
 };
 
+//______________________________________________________________________________
 
+
+//______________________________DFS_class_______________________________________
+template <class V>
+class DFS {
+    typedef enum {NEVER, ONCE, TWICE} State;
+
+    std::unordered_map<V, State> visited;
+    std::unordered_map<V, Vertex<V>> prev;
+public: 
+    DFS() {};
+
+    void operator() (Graph<V> &G);
+    void traverse (Vertex<V> &v);
+};
+//______________________________________________________________________________
+
+
+//_______________________________MAIN___________________________________________
 int main() {
     int n;
     std::cin >> n;
@@ -116,13 +153,69 @@ int main() {
     //std::cout << cli_response[is_optimal(R, B)];
 
     //test print
+
+    DFS<int> dfs;
+
+    dfs(R);
     
+    /*
     for (auto v : R.get_vertices()) {
         for (auto u : adj(v)) {
             std::cout << u << " ";
         }
         std::cout << std::endl;
     }
+    */
 
     return 0;
 }
+//______________________________________________________________________________
+
+
+//________________________DFS_implementation____________________________________
+template <class V>
+void DFS<V>::operator() (Graph<V> &G) {
+
+    for (auto &v : G.get_vertices()) {
+        visited[v] = NEVER;
+    }
+
+    for (auto &v : G.get_vertices()) {
+        traverse(v);
+    }
+    
+    visited.clear();
+    prev.clear();
+    return;
+}
+
+template <class V>
+void DFS<V>::traverse(Vertex<V> &v) {
+    
+    std::stack<Vertex<V>> stack;
+    stack.push(v);
+    
+    while (not stack.empty()) {
+        auto v = stack.top();
+        stack.pop();
+
+        prev[v.get_name()];
+        
+        if (visited[v] == ONCE) {
+            reach(prev[v]).push_back(v);
+            reach(prev[v]).insert(reach(prev[v]).end(), reach(v).begin(), reach(v).end());
+            visited[v] = TWICE;
+        }
+        
+        if (visited[v] == NEVER) {
+            for (auto& u : adj(v)) {
+                prev[u] = v;
+                stack.push(u);
+            }
+            visited[v] = ONCE;
+        }
+    }
+    
+    return;
+}
+//______________________________________________________________________________
