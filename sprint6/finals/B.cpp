@@ -34,39 +34,75 @@
 //
 
 #include <iostream>
-#include <vector>
 #include <unordered_map>
 #include <list>
 #include <map>
 
 template <class V>
-class DiGraph { 
+class Vertex;
+
+template <class V>
+class Graph { 
     // Directed Graph class implemented on adjacency list
-    size_t vertices_count;
-    std::unordered_map<V, std::list<V>> adjacency_list;
+    typedef Vertex<V> Vert;
+
+    std::list<Vert> vertices;
+    std::unordered_map<V, std::list<Vert>> adjacency_list;
+    std::unordered_map<V, std::list<Vert>> reachibility_list;
 
 public:
-    DiGraph(size_t n) : vertices_count(n) {};
+    Graph(size_t n) { 
+        for (size_t i = 0; i < n; ++i) {
+            vertices.push_back(Vert(V(i), *this));
+        }
+    }
 
-    void add_arc(const V &from, const V &to);
+    void add_arc(const V &from, const V &to) {
+        adjacency_list[from].push_back(Vert(to, *this));
+    }
 
-    size_t get_vertices_count();
-    std::list<V>& get_adjacent(const V &from);
+    size_t size() const {
+        return vertices.size(); 
+    }
+
+    std::list<Vert>& get_vertices() {
+        return vertices;
+    }
+
+    std::list<Vert>& get_adjacent(const V &from) {
+        return adjacency_list[from];
+    }
+
+    std::list<Vert>& get_reachable(const V &from) {
+        return reachibility_list[from];
+    }
 };
 
 
-bool is_optimal(DiGraph<int> &R, DiGraph<int> &B);
-void update_reachable(int u, std::vector<bool> &reachable , DiGraph<int> &G);
-bool zero_overlay(const std::vector<bool> &lhs, const std::vector<bool> &rhs);
+template <class V>
+class Vertex {
+        V name;
+        Graph<V> &G;
+    public: 
+        Vertex(V v, Graph<V> &G) : name(v), G(G) {};
+        
+        friend std::ostream& operator << (std::ostream &out, const Vertex &v) {
+            return out << v.name;
+        }
+
+        friend std::list<Vertex>& adj(Vertex &v) {
+            return v.G.get_adjacent(v.name);
+        }
+};
 
 
 int main() {
     int n;
     std::cin >> n;
 
-    DiGraph<int> R(n), B(n);
+    Graph<int> R(n), B(n);
 
-    std::map<char, DiGraph<int>*> get_graph { {'R', &R}, {'B', &B} };
+    std::map<char, Graph<int>*> get_graph { {'R', &R}, {'B', &B} };
     char edge_class; // R or B
 
     for (int i = 0; i < (n - 1); ++i) {
@@ -77,60 +113,16 @@ int main() {
     }
 
     std::map<bool, std::string> cli_response {{false, "NO\n"}, {true, "YES\n"}};
-    std::cout << cli_response[is_optimal(R, B)];
+    //std::cout << cli_response[is_optimal(R, B)];
+
+    //test print
+    
+    for (auto v : R.get_vertices()) {
+        for (auto u : adj(v)) {
+            std::cout << u << " ";
+        }
+        std::cout << std::endl;
+    }
 
     return 0;
-}
-
-
-bool is_optimal(DiGraph<int> &R, DiGraph<int> &B) {
-    size_t n = R.get_vertices_count();
-    std::map<char, std::vector<bool>> reachable {
-                                        {'R', std::vector<bool>(n, false)}, 
-                                        {'B', std::vector<bool>(n, false)}
-                                    };
-
-    for (int u = (n-2); u >= 0; --u) {
-
-        update_reachable(u, reachable['R'], R);
-        update_reachable(u, reachable['B'], B);
-
-        if (not zero_overlay(reachable['R'], reachable['B'])) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void update_reachable(int u, std::vector<bool> &reachable , DiGraph<int> &G) {
-    for (int v : G.get_adjacent(u)) {
-        
-    }
-    return;
-}   
-
-bool zero_overlay(const std::vector<bool> &lhs, const std::vector<bool> &rhs) {
-    for (int i = 0; i < lhs.size(); ++i) {
-        if ((lhs[i] == true) && (rhs[i] == true)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-template <class V>
-void DiGraph<V>::add_arc(const V &from, const V& to) {
-    adjacency_list[from].push_back(to);
-    return;
-}
-
-template <class V>
-std::list<V>& DiGraph<V>::get_adjacent(const V &from) {
-    return adjacency_list[from];
-}
-
-template <class V>
-size_t DiGraph<V>::get_vertices_count() {
-    return vertices_count;
 }
