@@ -12,134 +12,76 @@
 //
 // The goal is to detect whether the partition (R,B) is optimal for the graph G.
 //
-// The idea of the algorithm is to iterate through the vertices in reverse 
-// order and for each vertice v_i compare R and B reachibility of all the 
-// others from it.
+// The algortihm simply constructs reachable sets for each vertice in a graph 
+// and compare them afterwards: iff there is a coincidence the partiaion is not 
+// optimal
 //
-// def. We denote the set of all reachable from x vertices as reachable(x).
-//
-// As vertices are sorted topologically, we know that reachable(v_i) may be 
-// derived from higher reachables in O(n). Hence, by iterating from 
-// v_{n-1} to v_0 we may construct reachable sets one by one in O(n) each, 
-// resulting in O(n^2).
-//
-// We need to store reachables that are of O(n^2) size.
-// To compare obtained reachables we need O(n^2) time.
+// In order to get reachable(v) we may run DFS(v) and collect all traversed 
+// vertices O(n^2). When running through descendant vertices DFS automatically
+// collects reachable sets for them. Hence, in one DFS, i.e. O(n^2) we may 
+// collect all reachable sets for a graph.
 //
 // Therefore we get:
-// O(n^2) time complexity
-// O(n^2) additional memory consumption
+// O(n^2) time complexity (from DFS and reachables comparison)
+// O(n^2) additional memory consumption (as we need to store reachables)
 //
 // The algorithm itself is described below.
 //
 
+//_________________________________Includes_____________________________________
 #include <iostream>
-#include <unordered_map>
+#include <vector>
 #include <list>
 #include <map>
 #include <stack>
+#include <algorithm>
+#include <numeric>
 
-template <class V>
-class Vertex;
+//_________________________________Graph_class__________________________________
+class Graph {
+    std::list<int> vertices;
+    std::vector<std::list<int>> adjacency_list;
+    std::vector<std::list<int>> reachibility_list;
+public:
+    Graph(int n) : adjacency_list(n), reachibility_list(n), vertices() {
+        for (int v = 0; v < n; ++v) {
+            vertices.push_back(v);
+        }
+    };
 
-//__________________________Graph_class_________________________________________
-template <class V>
-class Graph { 
-    // Directed Graph class implemented on adjacency list
-    typedef Vertex<V> Vert;
+    void add_arc(int from, int to);
 
-    std::list<Vert> vertices;
-    std::unordered_map<V, std::list<Vert>> adjacency_list;
-    std::unordered_map<V, std::list<Vert>> reachibility_list;
+    const std::list<int>& get_vertices() const;
+    const std::list<int>& adjacent(int v) const;
+          std::list<int>& reachable(int v);
+};
+
+//___________________________________DFS_class__________________________________
+class DFS {
+    std::vector<int> times_visited;
+    std::vector<int> previous;
+    Graph* Gptr;
 
 public:
-    Graph(size_t n = 0) { 
-        for (size_t i = 0; i < n; ++i) {
-            vertices.push_back(Vert(V(i), *this));
-        }
-    }
+    DFS(int n) : times_visited(n, 0), previous(n, -1), Gptr(nullptr) {};
+    void operator() (Graph &G);
 
-    void add_arc(const V &from, const V &to) {
-        adjacency_list[from].push_back(Vert(to, *this));
-    }
-
-    size_t size() const {
-        return vertices.size(); 
-    }
-
-    std::list<Vert>& get_vertices() {
-        return vertices;
-    }
-
-    std::list<Vert>& get_adjacent(const V &from) {
-        return adjacency_list[from];
-    }
-
-    std::list<Vert>& get_reachable(const V &from) {
-        return reachibility_list[from];
-    }
-};
-//______________________________________________________________________________
-
-
-//_______________________Vertex_class___________________________________________
-template <class V>
-class Vertex {
-        V name;
-        Graph<V> &G;
-    public: 
-        Vertex(V v, Graph<V> &G) : name(v), G(G) {};
-
-        operator V() const {return name;};
-
-        const Vertex<V>& operator= (const Vertex<V> &other) {
-            name = other.name; G = other.G; return *this;
-        }
-
-        V get_name() const {
-            return name;
-        }
-        
-        friend std::ostream& operator << (std::ostream &out, const Vertex &v) {
-            return out << v.name;
-        }
-
-        friend std::list<Vertex>& adj(Vertex &v) {
-            return v.G.get_adjacent(v.name);
-        }
-
-        friend std::list<Vertex>& reach(Vertex &v) {
-            return v.G.get_reachable(v.name);
-        }
+private:
+    void clear();
+    void traverse(int v);
+    void update_reachable(int v);
 };
 
-//______________________________________________________________________________
+//____________________________________Main______________________________________
+bool is_optimal(int n, Graph &R, Graph &B);
 
-
-//______________________________DFS_class_______________________________________
-template <class V>
-class DFS {
-    typedef enum {NEVER, ONCE, TWICE} State;
-
-    std::unordered_map<V, State> visited;
-    std::unordered_map<V, Vertex<V>> prev;
-public: 
-    DFS() {};
-
-    void operator() (Graph<V> &G);
-    void traverse (Vertex<V> &v);
-};
-//______________________________________________________________________________
-
-
-//_______________________________MAIN___________________________________________
 int main() {
     int n;
     std::cin >> n;
 
-    Graph<int> R(n), B(n);
+    Graph R(n), B(n);
 
-    std::map<char, Graph<int>*> get_graph { {'R', &R}, {'B', &B} };
+    std::map<char, Graph*> get_graph { {'R', &R}, {'B', &B} };
     char edge_class; // R or B
 
     for (int i = 0; i < (n - 1); ++i) {
@@ -150,72 +92,99 @@ int main() {
     }
 
     std::map<bool, std::string> cli_response {{false, "NO\n"}, {true, "YES\n"}};
-    //std::cout << cli_response[is_optimal(R, B)];
-
-    //test print
-
-    DFS<int> dfs;
-
-    dfs(R);
-    
-    /*
-    for (auto v : R.get_vertices()) {
-        for (auto u : adj(v)) {
-            std::cout << u << " ";
-        }
-        std::cout << std::endl;
-    }
-    */
+    std::cout << cli_response[is_optimal(n, R, B)];
 
     return 0;
 }
-//______________________________________________________________________________
 
 
-//________________________DFS_implementation____________________________________
-template <class V>
-void DFS<V>::operator() (Graph<V> &G) {
+//_______________________is_optimal_implementation______________________________
+bool is_optimal(int n, Graph &R, Graph &B) {
+    // obtain reachables
+    DFS dfs(n);
+    dfs(R); dfs(B);
 
-    for (auto &v : G.get_vertices()) {
-        visited[v] = NEVER;
+    // reachables comparison
+    for (int v = 0; v < n; ++v) {
+        int r, b;
+        while ((not R.reachable(v).empty()) &&  (not B.reachable(v).empty())) {
+            r = R.reachable(v).front();
+            b = B.reachable(v).front();
+            if (r < b) {
+                R.reachable(v).pop_front();
+            }
+            if (r > b) {
+                B.reachable(v).pop_front();
+            }
+            if (r == b) {
+                return false;
+            }
+        }
     }
+    return true;
+}
 
-    for (auto &v : G.get_vertices()) {
+//_____________________________Graph_methods____________________________________
+void Graph::add_arc(int from, int to) {
+    adjacency_list[from].push_back(to);
+}
+const std::list<int>& Graph::get_vertices() const {
+    return vertices;
+}
+const std::list<int>& Graph::adjacent(int v) const {
+    return adjacency_list[v];
+}
+std::list<int>& Graph::reachable(int v) {
+    return reachibility_list[v];
+}
+
+//______________________________DFS_methods_____________________________________
+void DFS::operator() (Graph &G) {
+    Gptr = &G;
+    for (auto v : G.get_vertices()) {
         traverse(v);
     }
-    
-    visited.clear();
-    prev.clear();
-    return;
+    clear();
 }
 
-template <class V>
-void DFS<V>::traverse(Vertex<V> &v) {
-    
-    std::stack<Vertex<V>> stack;
+void DFS::traverse(int v) {
+    Graph& G = *Gptr;
+    std::stack<int> stack;
     stack.push(v);
-    
-    while (not stack.empty()) {
-        auto v = stack.top();
-        stack.pop();
 
-        prev[v.get_name()];
+    while (not stack.empty()) {
+        int v = stack.top();
         
-        if (visited[v] == ONCE) {
-            reach(prev[v]).push_back(v);
-            reach(prev[v]).insert(reach(prev[v]).end(), reach(v).begin(), reach(v).end());
-            visited[v] = TWICE;
+        if (times_visited[v] == 2) {
+            stack.pop();
+        }
+        if (times_visited[v] == 1) {
+            update_reachable(v);
+            times_visited[v]++;
+            stack.pop();
+        }
+        if (times_visited[v] == 0) {
+            for (auto u : G.adjacent(v)) {
+                previous[u] = v;
+                stack.push(u);                
+            }           
+            times_visited[v]++;
         }
         
-        if (visited[v] == NEVER) {
-            for (auto& u : adj(v)) {
-                prev[u] = v;
-                stack.push(u);
-            }
-            visited[v] = ONCE;
-        }
     }
-    
-    return;
 }
-//______________________________________________________________________________
+
+void DFS::update_reachable(int v) {
+    Graph& G = *Gptr;
+    if (previous[v] != -1) {
+        G.reachable(previous[v]).push_back(v);
+        G.reachable(previous[v]).insert(G.reachable(previous[v]).end(),
+                                G.reachable(v).begin(), G.reachable(v).end());
+    }
+}
+
+void DFS::clear() {
+    std::fill(times_visited.begin(), times_visited.end(), 0);
+    std::fill(previous.begin(), previous.end(), -1);
+    Gptr = nullptr;
+}
