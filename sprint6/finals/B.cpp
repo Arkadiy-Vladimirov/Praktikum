@@ -1,190 +1,191 @@
-// accepted parcel ID: ---
+// accepted parcel ID: 86308288
 //
-// An oriented graph G = (V, E) (|V| = n, |E| = m) is given and is divided into 
-// subgraphs: R = (V, E_r) and B = (V, E_b), E = E_r v E_b. Vertices V are 
-// already topologically sorted w.r.t. both E_r and E_b.
 //
-// def. We will say that a vertice v is G-reachable from a vertice u if there 
-// is a path u-->v in the graph G.
+// _Problem_
 //
-// def. We will say that (R, B) is an optimal partition of a graph G if there 
-// is no such pair of vertices (u,v) that v is both R- and B- reachable from u.
+// An oriented graph G = (V,E) is given. The vertices are sorted in topological 
+// order, each vertice is connected with all the subsequent, i.e v_i whith 
+// v_{i+1}, ..., v_{n-1} (i = 0, ... n-1; |V| = n).
 //
-// The goal is to detect whether the partition (R,B) is optimal for the graph G.
+// Edges in the graph are divided into two classes: E = E_b v E_r, giving two
+// subgraphs of the graph G : B = (V,E_b), R = (V, E_r).
 //
-// The algortihm simply constructs reachable sets for each vertice in a graph 
-// and compare them afterwards: iff there is a coincidence the partiaion is not 
-// optimal
+// def. Say that a vertice v is G-reachable from a vertice u is u->v in the 
+// sense of graph G. 
+// 
+// def. Say that a partition R,B of a given graph G is optimal if there are no
+// such a pair of vertices (u,v) that v is both R-reachable and B-reachable.
 //
-// In order to get reachable(v) we may run DFS(v) and collect all traversed 
-// vertices O(n^2). When running through descendant vertices DFS automatically
-// collects reachable sets for them. Hence, in one DFS, i.e. O(n^2) we may 
-// collect all reachable sets for a graph.
+// The goal is to detect if a partition provided is optimal.
 //
-// Therefore we get:
-// O(n^2) time complexity (from DFS and reachables comparison)
-// O(n^2) additional memory consumption (as we need to store reachables)
 //
-// The algorithm itself is described below.
+// _Solution_
+//
+// To get the answer we have to look through all the pairs of vertices and 
+// check for R and B reachibility. Or, equivalently, for each vertice v we may 
+// look at set of all R reachable and B reachable vertices. A partition is not
+// optimal iff there exists such v that the intersection of such sets is not 
+// empty.
+//
+// To obtain reachability sets DFS is used. By definition, when returned from 
+// another vertex traversal the DFS has passed through all the reachable 
+// vertices. Explicitely DFS is done as follows:
+//
+// - All the vertices start whith lists of reachibility preset as adjacency 
+// lists that would be updated during the algorithm (i.e. done in-place).
+// - When DFS pushes another vertex into the stack, previous vertx is stored.
+// - When DFS returns from another vertex, it updates the reachibility list 
+// of the previous, adding what is reached from the finished vertex.
+//
+// By definition by the end of DFS all reachibility lists would be up-to-date.
+//
+// In our particular problem, as the graph is almost full (full in the sense of 
+// oriented, topologically sorted graph), and the partition is tight, detecting 
+// a new reachable vertex (i.e. not defined in the adjacecy list already) in 
+// sense of, say, R, automatically implies that there is a reachibility 
+// coincidence in R and B and the answer is found - (R,B) is not optimal. 
+// Therefore, the breakpoint of the program is set as follows - the DFS founds 
+// a new reachibility list entry.
+//
+// The complexity of the program is all defined by the DFS and thus is O(n^2) 
+// both in time and memory.
 //
 
-//_________________________________Includes_____________________________________
+
 #include <iostream>
 #include <vector>
 #include <list>
 #include <map>
 #include <stack>
-#include <algorithm>
-#include <numeric>
 
-//_________________________________Graph_class__________________________________
 class Graph {
-    std::list<int> vertices;
-    std::vector<std::list<int>> adjacency_list;
-    std::vector<std::list<int>> reachibility_list;
+    std::vector<std::vector<char>> adj;
+
 public:
-    Graph(int n) : adjacency_list(n), reachibility_list(n), vertices() {
-        for (int v = 0; v < n; ++v) {
-            vertices.push_back(v);
-        }
-    };
+    Graph(int n);
+    size_t size() const;
+    void print();
 
-    void add_arc(int from, int to);
-
-    const std::list<int>& get_vertices() const;
-    const std::list<int>& adjacent(int v) const;
-          std::list<int>& reachable(int v);
+    friend class DFS;
 };
 
-//___________________________________DFS_class__________________________________
 class DFS {
-    std::vector<int> times_visited;
-    std::vector<int> previous;
-    Graph* Gptr;
+    typedef enum {NOT_DETECTED, IN_PROCESS, FINISHED} State;
 
-public:
-    DFS(int n) : times_visited(n, 0), previous(n, -1), Gptr(nullptr) {};
-    void operator() (Graph &G);
+    Graph &G;
+    std::vector<State> state;
+    std::vector<int> prev;
 
 private:
-    void clear();
-    void traverse(int v);
-    void update_reachable(int v);
+    void traverse(int v, char color);
+    void update_adj(int v, char color);
+    void reset();
+
+public:
+    DFS(Graph &G) : G(G), state(G.size(), NOT_DETECTED), prev(G.size(), -1) {};
+
+    void operator() (char color);
 };
 
-//____________________________________Main______________________________________
-bool is_optimal(int n, Graph &R, Graph &B);
 
 int main() {
     int n;
     std::cin >> n;
 
-    Graph R(n), B(n);
+    Graph G(n);
 
-    std::map<char, Graph*> get_graph { {'R', &R}, {'B', &B} };
-    char edge_class; // R or B
+    DFS dfs(G);
 
-    for (int i = 0; i < (n - 1); ++i) {
-        for (int j = (i + 1); j < n; ++j) {
-            std::cin >> edge_class;
-            get_graph[edge_class]->add_arc(i, j);
-        }
+    try {
+        dfs('R');
+        dfs('B');
+        std::cout << "YES\n";
+    } catch (const char* err_msg) {
+        std::cout << "NO\n";
     }
-
-    std::map<bool, std::string> cli_response {{false, "NO\n"}, {true, "YES\n"}};
-    std::cout << cli_response[is_optimal(n, R, B)];
 
     return 0;
 }
 
 
-//_______________________is_optimal_implementation______________________________
-bool is_optimal(int n, Graph &R, Graph &B) {
-    // obtain reachables
-    DFS dfs(n);
-    dfs(R); dfs(B);
-
-    // reachables comparison
-    for (int v = 0; v < n; ++v) {
-        int r, b;
-        while ((not R.reachable(v).empty()) &&  (not B.reachable(v).empty())) {
-            r = R.reachable(v).front();
-            b = B.reachable(v).front();
-            if (r < b) {
-                R.reachable(v).pop_front();
-            }
-            if (r > b) {
-                B.reachable(v).pop_front();
-            }
-            if (r == b) {
-                return false;
-            }
-        }
+//________________________________DFS_methods___________________________________
+void DFS::operator() (char color) {
+    for (int v = 0; v < G.size(); ++v) {
+        traverse(v, color);
     }
-    return true;
+
+    reset();
 }
 
-//_____________________________Graph_methods____________________________________
-void Graph::add_arc(int from, int to) {
-    adjacency_list[from].push_back(to);
-}
-const std::list<int>& Graph::get_vertices() const {
-    return vertices;
-}
-const std::list<int>& Graph::adjacent(int v) const {
-    return adjacency_list[v];
-}
-std::list<int>& Graph::reachable(int v) {
-    return reachibility_list[v];
-}
-
-//______________________________DFS_methods_____________________________________
-void DFS::operator() (Graph &G) {
-    Gptr = &G;
-    for (auto v : G.get_vertices()) {
-        traverse(v);
-    }
-    clear();
-}
-
-void DFS::traverse(int v) {
-    Graph& G = *Gptr;
+void DFS::traverse(int v, char color) {
     std::stack<int> stack;
     stack.push(v);
 
     while (not stack.empty()) {
-        int v = stack.top();
-        
-        if (times_visited[v] == 2) {
+        v = stack.top();
+        if (state[v] == FINISHED) {
             stack.pop();
         }
-        if (times_visited[v] == 1) {
-            update_reachable(v);
-            times_visited[v]++;
+        if (state[v] == IN_PROCESS) {
+            state[v] = FINISHED;
+            if (prev[v] != -1) {
+                update_adj(v, color);
+            }
             stack.pop();
         }
-        if (times_visited[v] == 0) {
-            for (auto u : G.adjacent(v)) {
-                previous[u] = v;
-                stack.push(u);                
-            }           
-            times_visited[v]++;
+        if (state[v] == NOT_DETECTED) {
+            state[v] = IN_PROCESS;
+            for (int i = (G.size()-v-2); i >= 0; --i) {
+                if (G.adj[v][i] == color) {
+                    prev[v+1+i] = v;
+                    stack.push(v+1+i);
+                }
+            }
         }
-        
+    }    
+}
+
+void DFS::update_adj(int v, char color) {
+    int u = prev[v];
+    for (int i = 0; i < (G.size()-v-1); ++i) {
+        // check if we found a new reachable vertex
+        if ((G.adj[v][i] == color) && (G.adj[u][v-u+i] != color)) {
+            throw "coincidence found";
+        }
     }
 }
 
-void DFS::update_reachable(int v) {
-    Graph& G = *Gptr;
-    if (previous[v] != -1) {
-        G.reachable(previous[v]).push_back(v);
-        G.reachable(previous[v]).insert(G.reachable(previous[v]).end(),
-                                G.reachable(v).begin(), G.reachable(v).end());
+void DFS::reset() {
+    for (int i = 0; i < G.size(); ++i) {
+        state[i] = NOT_DETECTED;
+        prev[i] = -1;
     }
 }
 
-void DFS::clear() {
-    std::fill(times_visited.begin(), times_visited.end(), 0);
-    std::fill(previous.begin(), previous.end(), -1);
-    Gptr = nullptr;
+
+//________________________________Graph_methods_________________________________
+Graph::Graph(int n) : adj(n) {
+    char color;
+    for (int i = 0; i < (n - 1); ++i) {
+        adj[i].resize(n-i-1);
+        for (int j = 0; j < (n-i-1); ++j) {
+            std::cin >> color;
+            adj[i][j] = color;
+        }
+    }
 }
+
+void Graph::print() {
+    for (const auto& list : adj) {
+        for (char col : list) {
+            std::cout << col;
+        }
+        std::cout << '\n';
+    }
+}
+
+
+size_t Graph::size() const {
+    return adj.size();
+}
+
