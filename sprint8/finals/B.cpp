@@ -1,8 +1,9 @@
-#include <fstream>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <list>
 #include <queue>
+#include <vector>
 
 
 struct Node {
@@ -15,44 +16,50 @@ struct Node {
 
 class Trie {
     Node* root;
+
 public:
     Trie() : root(new(Node)) {};
     ~Trie();
     void add_word(const std::string &word);
 
-    // fills list of end iteratrors of prefixes str[0, end) that are words
-    void find_prefixes(std::string::const_iterator begin, 
-                       std::string::const_iterator end,
-                       std::list<std::string::const_iterator> &end_list);
-    // returns true if str[begin, end) is a concat of words
-    bool is_sentence(std::string::const_iterator begin, 
-                     std::string::const_iterator end  );
+    std::list<std::string::const_iterator> find_prefixes(
+                                            std::string::const_iterator first, 
+                                            std::string::const_iterator last );
 };
 
 int main() {
-    std::ifstream fin;  fin.open ("input.txt" );
-    std::ofstream fout; fout.open("output.txt");
-
     std::string str, word;
-    fin >> str;
+    std::cin >> str;
 
     int n;
-    fin >> n;
+    std::cin >> n;
 
     Trie trie;
     for (int i = 0; i < n; ++i) {
-        fin >> word;
+        std::cin >> word;
         trie.add_word(word);
     }
 
-    if (trie.is_sentence(str.begin(), str.end())) {
-        fout << "YES\n";
-    } else {
-        fout << "NO\n";
+    // is_sentence[pos] = true iff str[pos, end) is a sentence i.e. concat of words
+    std::vector<bool> is_sentence(str.size() + 1, false);
+    is_sentence[str.size()] = true;
+
+    for (int pos = str.size() - 1; pos >= 0; --pos) {
+
+        auto pref_ends = trie.find_prefixes(str.begin() + pos, str.end());
+
+        for (auto end_it : pref_ends) {
+            int count = std::distance(str.cbegin() + pos, end_it);
+            is_sentence[pos] = is_sentence[pos + count];
+        }
     }
 
-    fin.close();
-    fout.close();
+    if (is_sentence[0] == true) {
+        std::cout << "YES\n";
+    } else {
+        std::cout << "NO\n";
+    }
+
     return 0;
 }
 
@@ -92,13 +99,14 @@ void Trie::add_word(const std::string &word) {
     node_ptr->is_terminal = true;
 }
 
-void Trie::find_prefixes(std::string::const_iterator begin, 
-                         std::string::const_iterator end  ,
-                         std::list<std::string::const_iterator> &end_list) {
+std::list<std::string::const_iterator> Trie::find_prefixes(
+                                            std::string::const_iterator first, 
+                                            std::string::const_iterator last ) {
 
+    std::list<std::string::const_iterator> end_list;
     Node* node_ptr = root;
 
-    for (auto it = begin; it != end; ++it) {
+    for (auto it = first; it != last; ++it) {
 
         if (node_ptr->has_child(*it)) {
 
@@ -107,30 +115,10 @@ void Trie::find_prefixes(std::string::const_iterator begin,
             if (node_ptr->is_terminal) {
                 end_list.push_back(it + 1);
             }
+
         } else {
             break;
         }
     }
-}
-
-bool Trie::is_sentence(std::string::const_iterator first,
-                       std::string::const_iterator last ) {
-
-    if (first == last) {
-        return true;
-    }
-
-    std::list<std::string::const_iterator> prefix_ends;
-    find_prefixes(first, last, prefix_ends);
-    bool ans = false;
-
-    for (auto end : prefix_ends) {
-
-        ans = ans || is_sentence(end, last);
-        if (ans == true) {
-            return true;
-        }
-    }
-
-    return false;
+    return end_list;
 }
