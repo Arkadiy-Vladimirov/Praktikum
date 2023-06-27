@@ -1,3 +1,26 @@
+// accepted parcel ID: 88612716
+//
+// Problem: 
+//  Given n formulas get the maximum common prefix of strings this formulas 
+// define. The size of strings is guaranteed to be less than m.
+//  Here, formula is a random algebraic expression on strings where sum is a 
+// string concatenation and multiplication with a number x is a concatenation 
+// of x copies of a string.
+//
+// Solution:
+//  The algotihm simply computes the formulas and than goes through obtained 
+// strings and checks whether another character coincides within all of them.
+//
+//  The first part recursively costructs a string. To construct another 
+// symbol it would need O(1) time, resulting in O(m) for the whole string and 
+// O(nm) for all. It would also use O(m) space to support call stack and for 
+// auxilary string operations.
+//  The second part obviously needs O(nm) time and O(nm) space to save strings.
+//
+// Memory usage: O(nm)
+// Time consumption: O(nm)
+//
+
 #include <iostream>
 #include <string>
 #include <algorithm>

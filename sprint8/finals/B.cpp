@@ -1,3 +1,33 @@
+// accepted parcel ID: 88612726
+//
+// Problem:
+//  Given a text of size m and a dictionary of n words of size no more than l 
+// each, define if the text is a sentence, i.e. may be constructred with these 
+// words. The text and the words consist of symbols of fixed alphabet of size s.
+// ( m >> n, l >> s) 
+//
+// Solution:
+//  We would look at each suffix of the text - text[pos, end) from the smallest
+// one text[end-1, end) to the whole text - text[0, end), and evaluate whether 
+// it is a sentence. To do that we assume that an empty sentence is a sentence, 
+// and observe that text[pos, end) is a sentence iff there exists a word, s.t.
+//          text[pos, end) = word + text[pos + word.size(), end),
+//          where text[pos + word.size(), end) is a sentence.                (1)
+//
+//  Hence, for each suffix we only need to look at any word that is a prefix of 
+// it and check whether there is one that satisfies condition (1). In order to 
+// make the search of words effective we would construct a trie out of the 
+// dictionary in advance.
+//
+//  The trie would take O(l s^2) memory and it's construction would cost O(nl) 
+// time. It would take only O(l) each time to find all prefix words. The 
+// memoization array is_sentence would take O(m) memory. Given the prefix 
+// search we would traverse through it in O(ml) time.
+//
+//  Memory: O(m + l*s^2) ~ O(m)
+//  Time: O(ml)
+// 
+
 #include <fstream>
 #include <string>
 #include <unordered_map>
