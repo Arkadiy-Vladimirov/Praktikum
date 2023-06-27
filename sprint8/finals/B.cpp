@@ -1,4 +1,4 @@
-#include <iostream>
+#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <list>
@@ -28,17 +28,21 @@ public:
 };
 
 int main() {
+    std::ifstream fin;
+    fin.open("input.txt");
+
     std::string str, word;
-    std::cin >> str;
+    fin >> str;
 
     int n;
-    std::cin >> n;
+    fin >> n;
 
     Trie trie;
     for (int i = 0; i < n; ++i) {
-        std::cin >> word;
+        fin >> word;
         trie.add_word(word);
     }
+    fin.close();
 
     // is_sentence[pos] = true iff str[pos, end) is a sentence i.e. concat of words
     std::vector<bool> is_sentence(str.size() + 1, false);
@@ -50,15 +54,19 @@ int main() {
 
         for (auto end_it : pref_ends) {
             int count = std::distance(str.cbegin() + pos, end_it);
-            is_sentence[pos] = is_sentence[pos + count];
+            is_sentence[pos] = is_sentence[pos] || is_sentence[pos + count];
         }
     }
 
+    std::ofstream fout;
+    fout.open("output.txt");
+
     if (is_sentence[0] == true) {
-        std::cout << "YES\n";
+        fout << "YES\n";
     } else {
-        std::cout << "NO\n";
+        fout << "NO\n";
     }
+    fout.close();
 
     return 0;
 }
