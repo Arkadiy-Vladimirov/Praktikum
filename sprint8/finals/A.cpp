@@ -1,4 +1,4 @@
-// accepted parcel ID: 88612716
+// accepted parcel ID: 88623546
 //
 // Problem: 
 //  Given n formulas get the maximum common prefix of strings this formulas 
@@ -8,14 +8,17 @@
 // of x copies of a string.
 //
 // Solution:
-//  The algotihm simply computes the formulas and than goes through obtained 
-// strings and checks whether another character coincides within all of them.
+//  The algorithm simply computes the formulas and finds the greatest common 
+// prefix as the greatest common prefix of the minimum and the maximum strings 
+// (in lexicographical order).
 //
 //  The first part recursively costructs a string. To construct another 
 // symbol it would need O(1) time, resulting in O(m) for the whole string and 
 // O(nm) for all. It would also use O(m) space to support call stack and for 
 // auxilary string operations.
-//  The second part obviously needs O(nm) time and O(nm) space to save strings.
+//  To find the greatest common prefix of two strings O(m) operations would be
+// performed. And to find the maximum and the minimum strings another O(nm) 
+// operations are needed.
 //
 // Memory usage: O(nm)
 // Time consumption: O(nm)
@@ -30,7 +33,7 @@ std::string unpack(const std::string &str);
 int find_digit(const std::string &str);
 int find_close(const std::string &str);
 
-std::string max_prefix(const std::vector<std::string> &lines);
+std::string max_common_prefix(const std::string &a, const std::string &b);
 
 std::string operator * (int n, const std::string &str);
 
@@ -44,26 +47,26 @@ int main() {
         line = unpack(line);
     }
 
-    std::cout << max_prefix(lines) << std::endl;
+    std::string max_line = *std::max_element(lines.begin(), lines.end());
+    std::string min_line = *std::min_element(lines.begin(), lines.end());
     
+    std::cout << max_common_prefix(min_line, max_line) << std::endl;
+
     return 0;
 }
 
 
 
-std::string max_prefix(const std::vector<std::string> &lines) {
+std::string max_common_prefix(const std::string &a, const std::string &b) {
 
     std::string max_prefix;
-    for (int i = 0; i < lines[0].size(); ++i) {
-        char c = lines[0][i];
-        
-        for (auto &line : lines) {
-            if ((i == line.size()) || (line[i] != c)) {
-                return max_prefix;
-            }
+    for (int i = 0; i < std::min(a.size(), b.size()); ++i) {
+        if (a[i] != b[i]) {
+            return max_prefix;
         }
-        max_prefix = max_prefix  + c;
+        max_prefix = max_prefix + a[i];
     }
+    
     return max_prefix;
 }
 
