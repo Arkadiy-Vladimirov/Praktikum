@@ -11,3 +11,6 @@ All the problems are solved as .cpp code, hence to compile any you need to run
 in appropiate directory
 
     $ g++ filename.cpp -o filename -std=c++17
+
+The course is completed, you may look at certificates `AlgoPracticum_ENG.pdf` 
+or `AlgoPracticum_RUS.pdf` in this folder.
